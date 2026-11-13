@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AETHER // 暖心餐飲決策系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #140f0c;
+      --bg-panel: rgba(32, 23, 18, 0.76);
+      --bg-card: rgba(44, 32, 25, 0.68);
+      --bg-card-hover: rgba(62, 45, 35, 0.88);
+      --border-dim: rgba(244, 162, 97, 0.18);
+      --border-bright: rgba(244, 162, 97, 0.65);
+      --amber: #f4a261;
+      --amber-light: #ffbe85;
+      --amber-glow: rgba(244, 162, 97, 0.25);
+      --coral: #e76f51;
+      --coral-glow: rgba(231, 111, 81, 0.25);
+      --text-primary: #fdf6ee;
+      --text-secondary: #cbb9a8;
+      --text-muted: #8a7564;
+      --font-sans: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Orbitron', 'Noto Sans TC', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      line-height: 1.6;
+    }
+
+    /* Warm Cinematic Background Grid & Golden Hour Ambient Glow */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(244, 162, 97, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(244, 162, 97, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at 50% 40%, black 35%, transparent 90%);
+      -webkit-mask-image: radial-gradient(circle at 50% 40%, black 35%, transparent 90%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient-orb {
+      position: fixed;
+      width: 720px;
+      height: 720px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244, 162, 97, 0.14) 0%, rgba(231, 111, 81, 0.06) 45%, transparent 72%);
+      top: -240px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(28px);
+    }
+
+    .ambient-orb-bottom {
+      position: fixed;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(231, 111, 81, 0.08) 0%, transparent 70%);
+      bottom: -220px;
+      right: -120px;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(30px);
+    }
+
+    .scanline {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(15, 8, 4, 0.14) 51%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0.18;
+    }
+
+    /* Layout Container */
+    .app-shell {
+      position: relative;
+      z-index: 2;
+      max-width: 1040px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Telemetry Header */
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-dim);
+      margin-bottom: 32px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: rgba(244, 162, 97, 0.1);
+      position: relative;
+      box-shadow: 0 0 20px rgba(244, 162, 97, 0.16);
+      color: var(--amber);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .brand-text span {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--amber);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .telemetry {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(244, 162, 97, 0.08);
+      border: 1px solid var(--border-dim);
+      border-radius: 20px;
+      color: var(--amber);
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--amber);
+      box-shadow: 0 0 8px var(--amber);
+      animation: pulse 2.2s infinite ease-in-out;
+    }
+
+    /* Progress Stepper */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .step-item {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      padding: 14px 18px;
+      position: relative;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .step-item.active {
+      border-color: var(--border-bright);
+      background: rgba(244, 162, 97, 0.09);
+      box-shadow: 0 4px 24px rgba(244, 162, 97, 0.1);
+    }
+
+    .step-item.completed {
+      border-color: rgba(244, 162, 97, 0.38);
+    }
+
+    .step-item::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2.5px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--amber), var(--coral));
+      transition: width 0.4s ease;
+    }
+
+    .step-item.active::after, .step-item.completed::after {
+      width: 100%;
+    }
+
+    .step-code {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .step-item.active .step-code, .step-item.completed .step-code {
+      color: var(--amber);
+    }
+
+    .step-label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .step-item.active .step-label, .step-item.completed .step-label {
+      color: var(--text-primary);
+    }
+
+    /* Main Stage */
+    .stage-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stage-title-group .kicker {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--amber);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .stage-title-group h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--amber);
+      color: var(--amber);
+      background: rgba(244, 162, 97, 0.08);
+    }
+
+    /* Selection Grid */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+      animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hud-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dim);
+      border-radius: 12px;
+      padding: 24px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 168px;
+      text-align: left;
+      overflow: hidden;
+    }
+
+    .hud-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      background: radial-gradient(circle at top right, rgba(244, 162, 97, 0.12), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .hud-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-bright);
+      transform: translateY(-4px);
+      box-shadow: 0 14px 32px rgba(10, 5, 2, 0.45), 0 0 24px rgba(244, 162, 97, 0.12);
+    }
+
+    .hud-card:hover::after {
+      opacity: 1;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(244, 162, 97, 0.28);
+      background: rgba(244, 162, 97, 0.08);
+      display: grid;
+      place-items: center;
+      color: var(--amber);
+      transition: all 0.3s ease;
+    }
+
+    .hud-card:hover .card-icon {
+      background: rgba(244, 162, 97, 0.18);
+      border-color: var(--amber);
+      box-shadow: 0 0 16px var(--amber-glow);
+    }
+
+    .card-code {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .hud-card:hover .card-code {
+      color: var(--amber);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .card-meta {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 235, 215, 0.08);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hud-card:hover .card-meta {
+      color: var(--amber);
+    }
+
+    /* Scanning / Analyzing Overlay */
+    .analyzing-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .radar-ring {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 1px solid rgba(244, 162, 97, 0.28);
+      position: relative;
+      display: grid;
+      place-items: center;
+      margin-bottom: 28px;
+      background: radial-gradient(circle, rgba(244, 162, 97, 0.08) 0%, transparent 70%);
+    }
+
+    .radar-ring::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: var(--amber);
+      border-right-color: var(--coral);
+      animation: spin 1s linear infinite;
+    }
+
+    .radar-ring::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      border: 1px dashed rgba(244, 162, 97, 0.55);
+      animation: spinReverse 2.5s linear infinite;
+    }
+
+    .radar-core {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 0.1em;
+    }
+
+    .analyzing-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: 0.16em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .analyzing-log {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--amber);
+      opacity: 0.9;
+    }
+
+    /* Step 3: Result View (Warm Cinematic Target Card) */
+    .result-wrapper {
+      animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .target-panel {
+      background: linear-gradient(145deg, rgba(46, 33, 25, 0.9) 0%, rgba(24, 17, 13, 0.95) 100%);
+      border: 1px solid var(--border-bright);
+      border-radius: 14px;
+      padding: 36px;
+      position: relative;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(8, 4, 2, 0.65), 0 0 45px rgba(244, 162, 97, 0.1);
+    }
+
+    .target-panel::before, .target-panel::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--amber);
+      border-radius: 4px;
+    }
+    .target-panel::before { top: -2px; left: -2px; border-right: none; border-bottom: none; border-bottom-left-radius: 0; border-top-right-radius: 0; }
+    .target-panel::after { bottom: -2px; right: -2px; border-left: none; border-top: none; border-top-right-radius: 0; border-bottom-left-radius: 0; }
+
+    .target-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(244, 162, 97, 0.18);
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .target-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--amber-light);
+      border: 1px solid rgba(231, 111, 81, 0.45);
+      background: rgba(231, 111, 81, 0.14);
+      border-radius: 20px;
+      padding: 4px 14px;
+      letter-spacing: 0.12em;
+      margin-bottom: 14px;
+    }
+
+    .target-name {
+      font-size: 2.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    .target-sub {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .rating-box {
+      background: rgba(244, 162, 97, 0.08);
+      border: 1px solid var(--border-dim);
+      border-radius: 10px;
+      padding: 14px 22px;
+      text-align: right;
+      min-width: 140px;
+    }
+
+    .rating-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .rating-score {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--amber);
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+
+    .target-specs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .spec-box {
+      background: rgba(255, 240, 225, 0.03);
+      border: 1px solid rgba(244, 162, 97, 0.14);
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+
+    .spec-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--amber);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .spec-value {
+      font-size: 0.98rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .target-brief {
+      background: rgba(244, 162, 97, 0.06);
+      border-left: 3px solid var(--amber);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      color: var(--text-secondary);
+      font-size: 0.96rem;
+      line-height: 1.75;
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--amber) 0%, var(--coral) 100%);
+      color: #1c1008;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 26px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 0.04em;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      box-shadow: 0 6px 24px var(--amber-glow);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(244, 162, 97, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(244, 162, 97, 0.1);
+      color: var(--amber-light);
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      padding: 13px 22px;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(244, 162, 97, 0.18);
+      transform: translateY(-2px);
+    }
+
+    /* Footer */
+    .hud-footer {
+      margin-top: 48px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(244, 162, 97, 0.1);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.82); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes spinReverse {
+      to { transform: rotate(-360deg); }
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 720px) {
+      .stepper {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .target-panel {
+        padding: 24px 20px;
+      }
+      .target-name {
+        font-size: 1.65rem;
+      }
+      .rating-box {
+        text-align: left;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .telemetry {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .action-group {
+        width: 100%;
+      }
+      .btn-primary, .btn-secondary {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="ambient-orb"></div>
+  <div class="ambient-orb-bottom"></div>
+  <div class="scanline"></div>
+
+  <div class="app-shell">
+    <!-- Top HUD Bar -->
+    <header class="hud-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>AETHER // GASTRO-NAV</h1>
+          <span>WARM CULINARY DECISION OS v4.2</span>
+        </div>
+      </div>
+
+      <div class="telemetry">
+        <span id="clock-display">SYS.TIME --:--:--</span>
+        <div class="status-badge">
+          <span class="pulse-dot"></span>
+          <span>WARM LINK ACTIVE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 3-Step Indicator -->
+    <nav class="stepper" aria-label="決策進度">
+      <div class="step-item active" id="step-ind-1">
+        <div class="step-code"><span>PHASE 01</span><span id="ind-val-1">AWAITING</span></div>
+        <div class="step-label">選定餐飲種類</div>
+      </div>
+      <div class="step-item" id="step-ind-2">
+        <div class="step-code"><span>PHASE 02</span><span id="ind-val-2">STANDBY</span></div>
+        <div class="step-label">鎖定所屬地區</div>
+      </div>
+      <div class="step-item" id="step-ind-3">
+        <div class="step-code"><span>PHASE 03</span><span id="ind-val-3">LOCKED</span></div>
+        <div class="step-label">推薦目標餐廳</div>
+      </div>
+    </nav>
+
+    <!-- Dynamic Main Stage -->
+    <main class="stage-container" id="stage"></main>
+
+    <!-- Footer Telemetry -->
+    <footer class="hud-footer">
+      <span>// DATABASE: 60 VERIFIED CULINARY NODES</span>
+      <span>PROTOCOL: COZY PRECISION DINING</span>
+    </footer>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. SYSTEM DATA MATRIX (Categories, Regions, Restaurants)
+    // ==========================================
+    const CATEGORIES = [
+      {
+        id: 'japanese',
+        code: 'CAT-01 // JP-CRAFT',
+        name: '日式職人料理',
+        desc: '壽司、拉麵、炭火串燒與居酒屋',
+        countText: '4 SECTORS READY',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M8 12h8M12 8v8" opacity="0.5"/><path d="M4 4l16 16" stroke-dasharray="2 3"/></svg>`
+      },
+      {
+        id: 'hotpot',
+        code: 'CAT-02 // THERMAL',
+        name: '鍋物・頂級燒肉',
+        desc: '和牛燒肉、麻辣鍋、精緻個人鍋',
+        countText: '4 SECTORS READY',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2c.5 3.5-2 5-2 8a4 4 0 0 0 8 0c0-2.5-1.5-4-1.5-6"/><path d="M5 14h14a2 2 0 0 1 2 2v1a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5v-1a2 2 0 0 1 2-2z"/></svg>`
+      },
+      {
+        id: 'western',
+        code: 'CAT-03 // EURO-BISTRO',
+        name: '義法餐酒・排餐',
+        desc: '手作義大利麵、牛排館與微醺餐酒',
+        countText: '4 SECTORS READY',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 22h8M12 15v7M7 3h10l-1 7a4 4 0 0 1-8 0L7 3z"/></svg>`
+      },
+      {
+        id: 'asian',
+        code: 'CAT-04 // LOCAL-CORE',
+        name: '台味經典・亞洲菜',
+        desc: '質感台菜、小籠包、泰式與川湘料理',
+        countText: '4 SECTORS READY',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11h18M4 11a8 8 0 0 0 16 0M9 20h6M16 4l-3 7M20 5l-4 6"/></svg>`
+      },
+      {
+        id: 'cafe',
+        code: 'CAT-05 // CAFFEINE',
+        name: '精品咖啡・早午餐',
+        desc: '澳式早午餐、精品手沖與手作甜點',
+        countText: '4 SECTORS READY',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>`
+      }
+    ];
+
+    const REGIONS = [
+      {
+        id: 'taipei-east',
+        code: 'SEC-01 // 25.033°N 121.565°E',
+        name: '台北・信義 / 大安區',
+        desc: '信義百貨商圈、東區巷弄與永康生活圈',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L14 9h3l-1 13H8L7 9h3L12 2z"/></svg>`
+      },
+      {
+        id: 'taipei-west',
+        code: 'SEC-02 // 25.052°N 121.520°E',
+        name: '台北・中山 / 大同區',
+        desc: '赤峰街文創聚落、林森條通與大稻埕',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>`
+      },
+      {
+        id: 'taichung',
+        code: 'SEC-03 // 24.162°N 120.640°E',
+        name: '台中・西屯 / 勤美西區',
+        desc: '七期市政核心、草悟道與公益路一級戰區',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>`
+      },
+      {
+        id: 'kaohsiung',
+        code: 'SEC-04 // 22.668°N 120.302°E',
+        name: '高雄・左營 / 鼓山區',
+        desc: '巨蛋商圈、美術館特區與駁二海港沿線',
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12c3-4 7-4 10 0s7 4 10 0"/><path d="M2 17c3-4 7-4 10 0s7 4 10 0"/></svg>`
+      }
+    ];
+
+    const RESTAURANTS = [
+      // --- 台北信義/大安 (taipei-east) ---
+      { cat: 'japanese', reg: 'taipei-east', name: '挽肉と米 台北華山／忠孝體系', district: '大安區・忠孝復興', rating: '4.8', price: '$$', signature: '炭火直烤和牛漢堡排、羽釜現煮白飯', brief: '專注極致炭香與現炊米飯的東京名店，板前圍繞炭爐的沉浸式用餐體驗，肉汁豐沛且配料層次極高。' },
+      { cat: 'japanese', reg: 'taipei-east', name: '酉志 Yakitori', district: '大安區・仁愛圓環', rating: '4.7', price: '$$$', signature: '備長炭桂丁雞串燒、雞白湯拉麵', brief: '隱身巷弄的質感燒鳥割烹，精準掌控火候將雞肉各部位發揮極致，適合下班後靜謐小酌。' },
+      { cat: 'japanese', reg: 'taipei-east', name: '五之神製作所', district: '信義區・松菸旁', rating: '4.6', price: '$', signature: '濃厚豚骨蝦沾麵、限定海老拉麵', brief: '來自新宿的濃厚蝦湯霸主，將大量甜蝦熬煮成極致鮮濃醬汁，搭配極粗彈牙麵體與筍乾，衝擊力十足。' },
+
+      { cat: 'hotpot', reg: 'taipei-east', name: '橘色涮涮屋 一館', district: '大安區・大安路', rating: '4.8', price: '$$$$', signature: '活體青蟳、日本A5和牛、黃金雜炊', brief: '台北頂級鍋物代名詞，以無微不至的桌邊服務與收尾的極致蟹膏雜炊聞名，深夜聚餐首選。' },
+      { cat: 'hotpot', reg: 'taipei-east', name: '大腕燒肉專門店', district: '信義區・微風南山旁', rating: '4.7', price: '$$$$', signature: '幻切牛舌、和牛板腱涮烤', brief: '米其林星級肯定的板前燒肉，全程由專業職人精準代烤，鎖住和牛最完美的油脂香氣。' },
+      { cat: 'hotpot', reg: 'taipei-east', name: '青花驕麻辣鍋 光復南店', district: '大安區・國父紀念館', rating: '4.6', price: '$$', signature: '九葉青花椒麻辣鍋、仙氣頂級牛培根', brief: '主打麻香而不燥的青花椒湯底，香氣清冽提味，鴨血豆腐無限續加，空間大氣舒適。' },
+
+      { cat: 'western', reg: 'taipei-east', name: 'Solo Pasta 相信有人在乎義大利麵', district: '大安區・安和路', rating: '4.7', price: '$$', signature: '巴薩醋燻鴨胸奶油麵、拿坡里海瓜子', brief: '主廚嚴守義大利正統地域風味，麵條彈牙吸附醬汁，沒有多餘花俏卻每一口都紮實動人。' },
+      { cat: 'western', reg: 'taipei-east', name: 'Smith & Wollensky Taipei', district: '信義區・微風南山47F', rating: '4.7', price: '$$$$', signature: '乾式熟成帶骨肋眼、巨大巧克力蛋糕', brief: '坐擁 47 樓台北 101 絕美高空夜景，外酥內嫩的乾式熟成牛排帶來電影般的奢華饗宴。' },
+      { cat: 'western', reg: 'taipei-east', name: 'Allez Bistro 來酒館', district: '大安區・敦化南路', rating: '4.6', price: '$$$', signature: '油封鴨腿燉飯、香料烤羊排', brief: '結合法式烹調技法與輕鬆歐陸小酒館氛圍，葡萄酒單精選多款自然酒，適合約會或深度對談。' },
+
+      { cat: 'asian', reg: 'taipei-east', name: '鼎泰豐 信義／A13 旗艦店', district: '信義區・遠百A13', rating: '4.9', price: '$$', signature: '18摺原味小籠包、排骨蛋炒飯、紅油抄手', brief: '精密如工業標準的餐飲傳奇，穩定度與服務品質無可挑剔，無論何時都能帶來零失誤的滿足感。' },
+      { cat: 'asian', reg: 'taipei-east', name: '心潮飯店 Sinchao Rice Shoppe', district: '信義區・微風信義', rating: '4.6', price: '$$', signature: '炙燒干貝烏魚子炒飯、三杯雞', brief: '將傳統台式熱炒解構重塑為摩登復古餐酒館，炒飯鑊氣十足且擺盤精緻，極具視覺張力。' },
+      { cat: 'asian', reg: 'taipei-east', name: 'NARA Thai Cuisine 忠孝SOGO', district: '大安區・忠孝復興', rating: '4.5', price: '$$', signature: '金錢蝦餅、黃咖哩軟殼蟹、瑪莎曼牛肉', brief: '連續多年榮獲泰國最佳餐廳肯定，香料層次鮮明濃郁，酸辣開胃最適合提振食慾。' },
+
+      { cat: 'cafe', reg: 'taipei-east', name: 'Simple Kaffa 興波咖啡 旗艦店', district: '中正/大安交界・忠孝東路', rating: '4.8', price: '$$', signature: '皺皺半熟蜂蜜蛋糕、阿里山藝伎手沖', brief: '世界咖啡冠軍吳則霖主理，老屋改造的沉穩空間搭配頂尖單品咖啡，是都市中最高規格的感官充電站。' },
+      { cat: 'cafe', reg: 'taipei-east', name: 'ACME｜Taipei Fine Arts / 象山店', district: '大安/信義區', rating: '4.5', price: '$$', signature: '松露嫩蛋吐司、巴西莓果優格碗', brief: '極簡純白與冷調建築美學，早午餐擺盤俐落清爽，充滿都會時尚雜誌質感。' },
+      { cat: 'cafe', reg: 'taipei-east', name: 'Fika Fika Cafe', district: '大安/中山區', rating: '4.7', price: '$', signature: '北歐淺焙手沖、炙燒黑糖拿鐵', brief: '台灣最早引進北歐烘焙哲學的代表性空間，乾淨明亮的果酸調性咖啡讓人瞬間思緒清晰。' },
+
+      // --- 台北中山/大同 (taipei-west) ---
+      { cat: 'japanese', reg: 'taipei-west', name: '鷹流東京醬油拉麵 蘭丸', district: '中山區・中山站', rating: '4.6', price: '$', signature: '清湯醬油叉燒拉麵、濃湯背脂拉麵', brief: '中山站排隊指標，極致濃縮的醬油與豚骨風味搭配大份量肉片，是重度拉麵愛好者的補給站。' },
+      { cat: 'japanese', reg: 'taipei-west', name: '魚庒 日本百年鰻料理', district: '中山區・中山北路條通', rating: '4.7', price: '$$$', signature: '關東風炭烤鰻魚重、玉子燒', brief: '傳承百年的日本老舖海外唯一分店，先蒸後烤的鰻魚入口即化，醬汁鹹甜深邃，充滿歷史底蘊。' },
+      { cat: 'japanese', reg: 'taipei-west', name: '小六食堂', district: '中山區・行天宮站', rating: '4.6', price: '$$', signature: '特選海鮮丼、明太子雞翅、午魚一夜干', brief: '高CP值且魚料新鮮厚切，濃厚昭和食堂氛圍讓人彷彿置身東京夜色電影場景。' },
+
+      { cat: 'hotpot', reg: 'taipei-west', name: '無老鍋 中山店', district: '中山區・中山北路二段', rating: '4.7', price: '$$', signature: '冰淇淋豆腐鍋、無老辣香鍋、麵包豆腐', brief: '東方禪意建築裝潢搭配獨創冰淇淋豆腐，湯頭溫潤醇厚，服務與氛圍皆屬上乘。' },
+      { cat: 'hotpot', reg: 'taipei-west', name: '老乾杯 中山北路店', district: '中山區・中山北路', rating: '4.7', price: '$$$', signature: '現切澳洲和牛肋眼、釜飯', brief: '成熟大人系的燒肉殿堂，精選冷藏熟成和牛搭配專業侍酒師推薦，質感沉穩內斂。' },
+      { cat: 'hotpot', reg: 'taipei-west', name: '雞湯大叔 民生/行天宮店', district: '中山區・行天宮站', rating: '4.6', price: '$$', signature: '蔬果雞湯、白蘭地燉雞湯', brief: '打破傳統火鍋框架，以法式高湯概念熬煮清澈鮮甜的雞湯底，試喝三款湯頭再點餐的設計極為貼心。' },
+
+      { cat: 'western', reg: 'taipei-west', name: 'PASTAIO 新鮮義大利麵', district: '中山/大同交界', rating: '4.6', price: '$$', signature: '開心果義式肉腸寬扁麵、牛肚包', brief: '挑高現代感空間，每日新鮮製麵呈現多種罕見造型麵體，口感與視覺都充滿設計感。' },
+      { cat: 'western', reg: 'taipei-west', name: 'A Cut 牛排館', district: '中山區・遼寧街', rating: '4.8', price: '$$$$', signature: 'A Cut 熟成肋眼心、舒芙蕾', brief: '米其林星級牛排館，深沉低調的酒窖風格裝潢，牛肉風味濃郁猶如藝術品。' },
+      { cat: 'western', reg: 'taipei-west', name: 'Waku Waku Pasta 赤峰店', district: '大同區・赤峰街', rating: '4.6', price: '$$', signature: '明太子鮭魚寬扁麵、昭和布丁', brief: '日系洋食與赤峰街老宅完美融合，溫潤木質調空間適合輕鬆卻不失格調的午晚餐。' },
+
+      { cat: 'asian', reg: 'taipei-west', name: '雙月食品社', district: '中山/中正區', rating: '4.6', price: '$', signature: '阿甘剝皮辣椒雞湯、愛恨椒芝麵', brief: '米其林必比登連年推薦，真材實料的滋補雞湯搭配香氣撲鼻的椒麻拌麵，暖胃又高效率。' },
+      { cat: 'asian', reg: 'taipei-west', name: '金蓬萊遵古台菜', district: '大同/士林延伸區', rating: '4.8', price: '$$$', signature: '蓬萊排骨酥、放山白斬雞、佛跳牆', brief: '米其林一星台菜代表，經典酒家菜手藝傳承三代，外酥內嫩的排骨酥令人一試難忘。' },
+      { cat: 'asian', reg: 'taipei-west', name: '晶華軒 Silks House', district: '中山區・晶華酒店3F', rating: '4.8', price: '$$$$', signature: '西施泡飯、片皮鴨三吃、港點', brief: '當代頂尖粵菜殿堂，空間宛如書法藝術館，西施泡飯桌邊淋湯的瞬間充滿儀式感。' },
+
+      { cat: 'cafe', reg: 'taipei-west', name: '卜卜商店', district: '大同區・赤峰街', rating: '4.5', price: '$', signature: '叮哥鍋煮奶茶、昭和布丁、司康', brief: '隱身二樓的極致復古植物咖啡廳，陽光穿透老窗框灑落，宛如文藝電影的一幀畫面。' },
+      { cat: 'cafe', reg: 'taipei-west', name: '幻猻家珈琲 Pallas Café', district: '大同區・迪化街', rating: '4.6', price: '$$', signature: '自家烘焙手沖、招牌濃郁咖哩飯、焦糖布丁', brief: '大稻埕老街中的神秘空間，深色木質調與黑膠音樂流淌，布丁與咖哩皆為台北頂尖水準。' },
+      { cat: 'cafe', reg: 'taipei-west', name: 'Coffee Dumbo 登波咖啡', district: '大同區・赤峰街', rating: '4.6', price: '$', signature: '焦糖肉桂捲、西西里咖啡', brief: '紐約布魯克林風格街角咖啡吧，美式復古鐵件與濃郁肉桂捲香氣，節奏明快有型。' },
+
+      // --- 台中西屯/西區 (taichung) ---
+      { cat: 'japanese', reg: 'taichung', name: '山下公園 ラーメン', district: '西區・金典綠園道旁', rating: '4.7', price: '$', signature: '豚骨濃湯拉麵、繁盛特製叉燒', brief: '台中人氣排隊拉麵名店，濃郁卻不膩口的雞豚雙湯底搭配炙燒舒肥叉燒，水準極高。' },
+      { cat: 'japanese', reg: 'taichung', name: '俺達の肉屋', district: '西區・公益路', rating: '4.9', price: '$$$$', signature: '日本A5和牛一頭買入拼盤、厚切牛舌', brief: '米其林一星且榮獲年輕主廚大獎的頂級和牛燒肉，每一塊肉的油花與切法都是科學級的精準。' },
+      { cat: 'japanese', reg: 'taichung', name: '花山椒和風料理', district: '西屯區・逢甲/七期周邊', rating: '4.6', price: '$$', signature: '炙燒比目魚握壽司、日式炸豆腐', brief: '低調隱密的質感日料，海鮮鮮度優異且熟食表現沉穩，適合不想人擠人的深夜覓食。' },
+
+      { cat: 'hotpot', reg: 'taichung', name: '屋馬燒肉 園邸／國安店', district: '西區・公益路', rating: '4.8', price: '$$$', signature: '極盛大和牛套餐、無限雞湯、海鮮粥', brief: '台中燒肉傳奇地標，氣派大器的建築空間搭配招牌甘醇雞湯與桌邊剝蝦服務，聚餐零失誤。' },
+      { cat: 'hotpot', reg: 'taichung', name: '茶六燒肉堂 朝富店', district: '西屯區・七期', rating: '4.8', price: '$$$', signature: '極黑牛雙人套餐、山藥、鮭魚味噌湯', brief: '輕井澤集團旗艦燒肉，現代東方建築美學與水池造景宛如電影場景，肉質與甜點皆出色。' },
+      { cat: 'hotpot', reg: 'taichung', name: '湯棧 公益店', district: '西區・公益路', rating: '4.7', price: '$$', signature: '麻油雞鍋、燒酒雞鍋、炸金針菇', brief: '主打台式古早味酒香鍋物，霸氣獨立的木質裝潢搭配滾燙麻油香氣，寒夜裡的終極慰藉。' },
+
+      { cat: 'western', reg: 'taichung', name: '鹽之華法式餐廳 Fleur de Sel', district: '西屯區・市政路', rating: '4.8', price: '$$$$', signature: '主廚無菜單法式料理、龍蝦料理', brief: '連續多年榮獲米其林一星，台中法餐最高殿堂，細膩優雅的盤飾與台灣在地食材的完美對話。' },
+      { cat: 'western', reg: 'taichung', name: 'Jai 宅 水湳/勤美線', district: '西區/北區', rating: '4.6', price: '$$', signature: '橘醬爆炸蛤蜊義大利麵、瀑布提拉米蘇', brief: '挑高植栽設計搭配豐富浮誇的海鮮用料，視覺與味覺雙重滿足的都會餐館。' },
+      { cat: 'western', reg: 'taichung', name: 'Forchetta 餐廳', district: '西屯區・惠中七街', rating: '4.8', price: '$$$$', signature: '台灣在地食材創意歐陸料理', brief: '同樣獲得米其林一星肯定的隱世名店，將花蓮海味與中部農產以建築美學般呈現。' },
+
+      { cat: 'asian', reg: 'taichung', name: '膳馨民間創作料理', district: '西區・存中街', rating: '4.7', price: '$$', signature: '椒鹽大元蹄、紅麴櫻桃鴨', brief: '米其林必比登推薦台菜，保留傳統古早味靈魂同時減油減鹽，精緻而不失家常溫度。' },
+      { cat: 'asian', reg: 'taichung', name: '滬舍餘味餐館', district: '西區/南屯公益線', rating: '4.5', price: '$', signature: '鮮肉生煎包、翡翠生煎包、油豆腐細粉', brief: '正宗上海老師傅手藝，皮薄底脆、湯汁爆漿的生煎包，必比登榜上常勝軍。' },
+      { cat: 'asian', reg: 'taichung', name: '1010湘 勤美誠品店', district: '西區・草悟道', rating: '4.6', price: '$$', signature: '神仙孜然肋排、臭豆腐肥腸阿干鍋', brief: '位於勤美綠園道核心，重口味香辣下飯的湖南菜系，快速解決重度食慾需求。' },
+
+      { cat: 'cafe', reg: 'taichung', name: '凡日 bread & meal', district: '西區・審計新村旁', rating: '4.6', price: '$$', signature: '日式厚鬆餅、鹽可頌早午餐盤', brief: '純白日系極簡老宅，早晨陽光透過玻璃窗灑落，現烤麵包香氣四溢。' },
+      { cat: 'cafe', reg: 'taichung', name: 'Coffee Stopover Black', district: '西區・福龍街', rating: '4.8', price: '$', signature: '客製化茶咖啡、單品濃縮', brief: '台灣最具實驗精神的咖啡館之一，猶如咖啡實驗室般精準拆解豆種、焙度與萃取比例。' },
+      { cat: 'cafe', reg: 'taichung', name: 'REC COFFEE Taiwan 旗艦店', district: '西屯區・中國信託金融大樓26F', rating: '4.7', price: '$$', signature: '博多濃厚拿鐵、26樓高空手沖', brief: '日本福岡冠軍咖啡海外一號店，坐在26樓俯瞰整個台中七期天際線，極具未來感。' },
+
+      // --- 高雄左營/鼓山 (kaohsiung) ---
+      { cat: 'japanese', reg: 'kaohsiung', name: '麵屋祥 東京醬油拉麵', district: '鼓山區・大順一路', rating: '4.7', price: '$', signature: '濃湯叉燒拉麵、清湯醬油拉麵', brief: '高雄拉麵界傳奇，極厚切叉燒與醇厚湯頭充滿職人氣魄，深夜限定營業更具神秘感。' },
+      { cat: 'japanese', reg: 'kaohsiung', name: '鮨 毅 Sushi Yi', district: '鼓山區・美術館特區', rating: '4.8', price: '$$$$', signature: '無菜單江戶前握壽司', brief: '隱密低調的高端板前壽司，嚴選日本豐洲市場與南台灣現流漁獲，節奏優雅精準。' },
+      { cat: 'japanese', reg: 'kaohsiung', name: '碳佐麻里 精品燒肉 高美店', district: '鼓山區・美術東四路', rating: '4.7', price: '$$$', signature: '極上和牛拼盤、石鍋蒜蝦飯', brief: '南台灣燒肉霸主，清水模水上建築氣勢磅礴，結合日式燒肉與多樣化精緻單點，體驗感極佳。' },
+
+      { cat: 'hotpot', reg: 'kaohsiung', name: '冬鄉小廚 酸菜白肉鍋', district: '鼓山區・西藏街', rating: '4.6', price: '$$', signature: '東北天然發酵酸菜白肉鍋、手工川丸子', brief: '傳承三代的眷村好味道，自然發酵的溫潤酸香搭配手切白肉，越煮越甘甜。' },
+      { cat: 'hotpot', reg: 'kaohsiung', name: '茶六燒肉堂 博愛店', district: '左營區・博愛二路', rating: '4.8', price: '$$$', signature: '極上牛排套餐、泡菜、雪花冰', brief: '北高雄最具指標性的排隊燒肉殿堂，寬敞挑高的暗色系裝潢與穩定肉質，絕不踩雷。' },
+      { cat: 'hotpot', reg: 'kaohsiung', name: '老四川巴蜀麻辣燙 南屏店', district: '鼓山區・南屏路', rating: '4.6', price: '$$', signature: '絕選麻辣鍋、川味涼粉、油條', brief: '發跡於高雄的麻辣鍋名店，藥膳與辣油香氣厚實，搭配酸辣開胃的川味涼粉是經典組合。' },
+
+      { cat: 'western', reg: 'kaohsiung', name: 'THOMAS CHIEN 法式餐廳', district: '前鎮/鼓山接壤・高雄軟體園區旁', rating: '4.8', price: '$$$$', signature: '大地時蔬沙拉、法式乾式熟成鴨胸', brief: '南台灣法餐領航者，極簡現代空間與米其林綠星永續理念，每一道菜都是對南國風土的致敬。' },
+      { cat: 'western', reg: 'kaohsiung', name: '薄多義 Bite 2 Eat 裕誠店', district: '左營區・裕誠路', rating: '4.5', price: '$$', signature: '窯烤手工披薩、法式芥末子雞肉麵', brief: '起源於高雄的歐風小鎮義式餐館，窯烤披薩餅皮焦香有嚼勁，氛圍輕鬆自在。' },
+      { cat: 'western', reg: 'kaohsiung', name: 'Marc L³', district: '前金/鼓山交界', rating: '4.9', price: '$$$$', signature: '當代預約制無菜單料理', brief: '南台灣最難訂位的當代料理之一，主廚以開放式廚房與強烈個人風格展現前衛餐飲美學。' },
+
+      { cat: 'asian', reg: 'kaohsiung', name: '鼎泰豐 高雄漢神巨蛋店', district: '左營區・漢神巨蛋B1', rating: '4.8', price: '$$', signature: '絲瓜蝦仁小籠包、酸辣湯、炒飯', brief: '北高雄聚餐最穩定的選擇，高效率動線與零誤差口感，滿足想吃精緻麵點的渴望。' },
+      { cat: 'asian', reg: 'kaohsiung', name: '帕泰家 Baan Phadthai', district: '左營區・巨蛋商圈', rating: '4.6', price: '$$', signature: '甘醬牛肉河粉、泰式酥炸軟殼蟹', brief: '連續獲得曼谷米其林必比登推薦的泰式河粉名店，南洋香料與椰糖風味極具辨識度。' },
+      { cat: 'asian', reg: 'kaohsiung', name: '海光俱樂部 中餐廳', district: '左營區・南大路', rating: '4.6', price: '$$', signature: '蔥油餅、酸菜白肉鍋、砂鍋魚頭', brief: '隱身左營海軍基地旁的歷史建築餐廳，道地江浙菜與北方麵點手藝，充滿時代電影感。' },
+
+      { cat: 'cafe', reg: 'kaohsiung', name: '路人咖啡 3號店 / 鼓山館', district: '鼓山/三民區', rating: '4.7', price: '$', signature: '自家烘焙單品手沖、肉桂捲', brief: '台灣咖啡界傳奇獨立品牌，高水準烘焙技術與親民價格，是南台灣咖啡迷的必訪聖地。' },
+      { cat: 'cafe', reg: 'kaohsiung', name: '卡啡那 Caffaina 美術館店', district: '鼓山區・美術東二路', rating: '4.6', price: '$$', signature: '法式舒芙蕾、虹吸咖啡', brief: '挑高歐式圖書館風格的旗艦咖啡廳，大片玻璃引入美術館綠意，甜點與空間感極佳。' },
+      { cat: 'cafe', reg: 'kaohsiung', name: '永心鳳茶 奶茶專門所', district: '鼓山/駁二沿線', rating: '4.7', price: '$$', signature: '台灣精品冷泡茶、千層蛋糕、鍋燒意麵', brief: '融合復古摩登台式美學的茶飲沙龍，在質感空間中品味最道地的台灣烏龍茶與精緻鹹甜食。' }
+    ];
+
+    // ==========================================
+    // 2. APPLICATION STATE & DOM REFERENCES
+    // ==========================================
+    const state = {
+      step: 1,
+      selectedCategory: null,
+      selectedRegion: null,
+      matches: [],
+      currentIndex: 0
+    };
+
+    const stageEl = document.getElementById('stage');
+
+    // ==========================================
+    // 3. LIVE TELEMETRY CLOCK
+    // ==========================================
+    function updateClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('clock-display').textContent =
+        `SYS.TIME ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ==========================================
+    // 4. STEPPER UI SYNC
+    // ==========================================
+    function updateStepper() {
+      const ind1 = document.getElementById('step-ind-1');
+      const ind2 = document.getElementById('step-ind-2');
+      const ind3 = document.getElementById('step-ind-3');
+
+      [ind1, ind2, ind3].forEach(el => el.classList.remove('active', 'completed'));
+
+      if (state.step === 1) {
+        ind1.classList.add('active');
+        document.getElementById('ind-val-1').textContent = 'SELECTING';
+        document.getElementById('ind-val-2').textContent = 'STANDBY';
+        document.getElementById('ind-val-3').textContent = 'LOCKED';
+      } else if (state.step === 2) {
+        ind1.classList.add('completed');
+        ind2.classList.add('active');
+        document.getElementById('ind-val-1').textContent = state.selectedCategory.name;
+        document.getElementById('ind-val-2').textContent = 'SELECTING';
+        document.getElementById('ind-val-3').textContent = 'LOCKED';
+      } else if (state.step === 3) {
+        ind1.classList.add('completed');
+        ind2.classList.add('completed');
+        ind3.classList.add('active');
+        document.getElementById('ind-val-1').textContent = state.selectedCategory.name;
+        document.getElementById('ind-val-2').textContent = state.selectedRegion.name;
+        document.getElementById('ind-val-3').textContent = 'TARGET LOCKED';
+      }
+    }
+
+    // ==========================================
+    // 5. RENDER FUNCTIONS
+    // ==========================================
+    function renderStep1() {
+      state.step = 1;
+      updateStepper();
+
+      stageEl.innerHTML = `
+        <div class="stage-header">
+          <div class="stage-title-group">
+            <span class="kicker">// PROTOCOL 01 : CULINARY CLASSIFICATION</span>
+            <h2>今天想吃哪一種類型的料理？</h2>
+          </div>
+        </div>
+        <div class="grid-cards">
+          ${CATEGORIES.map(cat => `
+            <button class="hud-card" onclick="selectCategory('${cat.id}')">
+              <div>
+                <div class="card-top">
+                  <div class="card-icon">${cat.icon}</div>
+                  <span class="card-code">${cat.code}</span>
+                </div>
+                <div class="card-title">${cat.name}</div>
+                <div class="card-desc">${cat.desc}</div>
+              </div>
+              <div class="card-meta">
+                <span>${cat.countText}</span>
+                <span>INITIALIZE &rarr;</span>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderStep2() {
+      state.step = 2;
+      updateStepper();
+
+      stageEl.innerHTML = `
+        <div class="stage-header">
+          <div class="stage-title-group">
+            <span class="kicker">// PROTOCOL 02 : GEOGRAPHIC SECTOR LOCK</span>
+            <h2>請選擇您目前的所在地區</h2>
+          </div>
+          <button class="btn-ghost" onclick="renderStep1()">
+            &larr; RETURN TO CATEGORY
+          </button>
+        </div>
+        <div class="grid-cards">
+          ${REGIONS.map(reg => `
+            <button class="hud-card" onclick="selectRegion('${reg.id}')">
+              <div>
+                <div class="card-top">
+                  <div class="card-icon">${reg.icon}</div>
+                  <span class="card-code">${reg.code}</span>
+                </div>
+                <div class="card-title">${reg.name}</div>
+                <div class="card-desc">${reg.desc}</div>
+              </div>
+              <div class="card-meta">
+                <span>NODE VERIFIED</span>
+                <span>SCAN SECTOR &rarr;</span>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function runAnalysisAndShowResult() {
+      state.step = 3;
+      updateStepper();
+
+      stageEl.innerHTML = `
+        <div class="analyzing-view">
+          <div class="radar-ring">
+            <span class="radar-core" id="scan-pct">0%</span>
+          </div>
+          <div class="analyzing-title">CALCULATING OPTIMAL TARGET</div>
+          <div class="analyzing-log" id="scan-log">
+            QUERYING [${state.selectedCategory.name}] IN [${state.selectedRegion.name}]...
+          </div>
+        </div>
+      `;
+
+      const pctEl = document.getElementById('scan-pct');
+      const logEl = document.getElementById('scan-log');
+      const logs = [
+        'CALIBRATING TASTE MATRIX...',
+        'CROSS-REFERENCING RATING TELEMETRY...',
+        'FILTERING TOP TIER NODES...',
+        'TARGET ACQUIRED.'
+      ];
+
+      let progress = 0;
+      const timer = setInterval(() => {
+        progress += 10;
+        if (pctEl) pctEl.textContent = `${Math.min(progress, 100)}%`;
+        const logIdx = Math.min(Math.floor(progress / 28), logs.length - 1);
+        if (logEl) logEl.textContent = logs[logIdx];
+
+        if (progress >= 100) {
+          clearInterval(timer);
+          setTimeout(renderResultCard, 180);
+        }
+      }, 65);
+    }
+
+    function renderResultCard() {
+      const target = state.matches[state.currentIndex];
+      const mapQuery = encodeURIComponent(`${target.name} ${target.district}`);
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+      stageEl.innerHTML = `
+        <div class="stage-header">
+          <div class="stage-title-group">
+            <span class="kicker">// PROTOCOL 03 : TARGET ACQUISITION COMPLETE</span>
+            <h2>系統為您推薦今日最佳餐廳</h2>
+          </div>
+          <button class="btn-ghost" onclick="renderStep2()">
+            &larr; CHANGE SECTOR
+          </button>
+        </div>
+
+        <div class="result-wrapper">
+          <div class="target-panel">
+            <div class="target-header">
+              <div>
+                <div class="target-tag">
+                  <span class="pulse-dot" style="background: var(--coral); box-shadow: 0 0 8px var(--coral);"></span>
+                  <span>OPTIMAL MATCH // PRIORITY #0${state.currentIndex + 1}</span>
+                </div>
+                <h3 class="target-name">${target.name}</h3>
+                <div class="target-sub">
+                  <span>${state.selectedRegion.name}</span>
+                  <span>•</span>
+                  <span>${target.district}</span>
+                  <span>•</span>
+                  <span>${state.selectedCategory.name}</span>
+                </div>
+              </div>
+
+              <div class="rating-box">
+                <div class="rating-label">TACTICAL SCORE</div>
+                <div class="rating-score">${target.rating} <span style="font-size:0.9rem; color:var(--text-secondary);">/ 5.0</span></div>
+              </div>
+            </div>
+
+            <div class="target-specs">
+              <div class="spec-box">
+                <div class="spec-label">// SIGNATURE DISHES (推薦必點)</div>
+                <div class="spec-value">${target.signature}</div>
+              </div>
+              <div class="spec-box">
+                <div class="spec-label">// SECTOR COORDINATE (所在區域)</div>
+                <div class="spec-value">${target.district}</div>
+              </div>
+              <div class="spec-box">
+                <div class="spec-label">// BUDGET TIER (消費等級)</div>
+                <div class="spec-value">${target.price} (${getPriceDesc(target.price)})</div>
+              </div>
+            </div>
+
+            <div class="target-brief">
+              <strong style="color: var(--amber); font-family: var(--font-mono); font-size: 0.82rem; display:block; margin-bottom:6px;">
+                // INTELLIGENCE BRIEFING:
+              </strong>
+              ${target.brief}
+            </div>
+
+            <div class="action-bar">
+              <div class="action-group">
+                <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                  </svg>
+                  開啟地圖導航
+                </a>
+                <button class="btn-secondary" onclick="rerollTarget()">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  換一家推薦 (${state.currentIndex + 1}/${state.matches.length})
+                </button>
+              </div>
+              <button class="btn-ghost" onclick="resetSystem()">
+                RESET SYSTEM // 重新開始
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 6. INTERACTION HANDLERS
+    // ==========================================
+    function getPriceDesc(price) {
+      const map = {
+        '$': '親民日常 NT$200-500',
+        '$$': '中價質感 NT$500-1,000',
+        '$$$': '精緻饗宴 NT$1,000-2,000',
+        '$$$$': '頂級奢華 NT$2,000+'
+      };
+      return map[price] || '依現場點餐';
+    }
+
+    function selectCategory(categoryId) {
+      state.selectedCategory = CATEGORIES.find(c => c.id === categoryId);
+      renderStep2();
+    }
+
+    function selectRegion(regionId) {
+      state.selectedRegion = REGIONS.find(r => r.id === regionId);
+
+      const filtered = RESTAURANTS.filter(
+        r => r.cat === state.selectedCategory.id && r.reg === state.selectedRegion.id
+      );
+      state.matches = shuffleArray([...filtered]);
+      state.currentIndex = 0;
+
+      runAnalysisAndShowResult();
+    }
+
+    function rerollTarget() {
+      if (state.matches.length <= 1) return;
+      state.currentIndex = (state.currentIndex + 1) % state.matches.length;
+      renderResultCard();
+    }
+
+    function resetSystem() {
+      state.selectedCategory = null;
+      state.selectedRegion = null;
+      state.matches = [];
+      state.currentIndex = 0;
+      renderStep1();
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Initialize Application
+    renderStep1();
+  </script>
+</body>
+</html>
